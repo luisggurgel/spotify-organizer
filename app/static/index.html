@@ -27,7 +27,7 @@
     }
 
     .container {
-      max-width: 760px;
+      max-width: 780px;
       margin: 0 auto;
       padding: 36px 20px 64px;
     }
@@ -82,8 +82,15 @@
       font-weight: 600;
     }
 
-    .field {
+    .field-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
       margin-bottom: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .field-row { grid-template-columns: 1fr; }
     }
 
     label.block {
@@ -93,7 +100,7 @@
       color: var(--text);
     }
 
-    select {
+    select, input[type="number"] {
       width: 100%;
       padding: 9px 12px;
       border-radius: 6px;
@@ -209,7 +216,7 @@
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
       gap: 10px;
       margin-top: 14px;
     }
@@ -232,8 +239,19 @@
       font-weight: 600;
     }
 
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .columns { grid-template-columns: 1fr; }
+    }
+
     ul.clean-list {
-      margin: 10px 0 0;
+      margin: 8px 0 0;
       padding-left: 18px;
       font-size: 0.9rem;
       color: var(--text);
@@ -249,9 +267,7 @@
       gap: 8px;
     }
 
-    footer a {
-      color: var(--muted);
-    }
+    footer a { color: var(--muted); }
   </style>
 </head>
 <body>
@@ -259,7 +275,7 @@
     <header>
       <div>
         <h1>Spotify Language Organizer</h1>
-        <p class="subtitle">Sort your liked songs by language using lyrics and NLP detection.</p>
+        <p class="subtitle">Sort your liked songs into playlists for every detected language.</p>
       </div>
       <span id="auth-badge" class="badge">Checking connection...</span>
     </header>
@@ -279,20 +295,37 @@
     <section class="card">
       <h2>2. Run</h2>
 
-      <div class="field">
-        <label class="block" for="cleanup-mode">Existing playlist handling</label>
-        <select id="cleanup-mode">
-          <option value="replace_tracks">Replace tracks in place (recommended)</option>
-          <option value="hard_delete">Delete old playlists and recreate from scratch</option>
-        </select>
-        <div class="hint" id="mode-hint">
-          Preserves the playlist link, cover art, and followers while removing any stray duplicates.
+      <div class="field-row">
+        <div>
+          <label class="block" for="cleanup-mode">Existing playlist handling</label>
+          <select id="cleanup-mode">
+            <option value="replace_tracks">Replace tracks in place (recommended)</option>
+            <option value="hard_delete">Delete old playlists and recreate from scratch</option>
+          </select>
+          <div class="hint" id="mode-hint">
+            Preserves playlist links, cover art, and followers while removing stray duplicates.
+          </div>
+        </div>
+        <div>
+          <label class="block" for="min-tracks">Min tracks per playlist</label>
+          <input type="number" id="min-tracks" min="1" max="50" value="3" />
+          <div class="hint">Avoids 1-song playlists.</div>
         </div>
       </div>
 
       <label class="checkbox-row">
+        <input type="checkbox" id="retry-unclassified" checked />
+        <span>Retry previously unclassified tracks (keeps already-classified tracks cached)</span>
+      </label>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="metadata-fallback" checked />
+        <span>Use script, title + ISRC, and artist-consensus fallback when no lyrics are found</span>
+      </label>
+
+      <label class="checkbox-row">
         <input type="checkbox" id="create-quarantine" />
-        <span>Create a review playlist for tracks with missing lyrics or uncertain language</span>
+        <span>Create a review playlist for tracks that remain unclassified</span>
       </label>
 
       <label class="checkbox-row">
@@ -302,7 +335,7 @@
 
       <label class="checkbox-row">
         <input type="checkbox" id="force-reclassify" />
-        <span>Ignore local cache and reclassify all tracks</span>
+        <span>Ignore all cache entries and reclassify every track from scratch</span>
       </label>
 
       <div class="actions">
@@ -320,7 +353,10 @@
       </div>
 
       <div id="stats-grid" class="stats-grid"></div>
-      <div id="lang-breakdown" style="margin-top:16px;"></div>
+      <div class="columns">
+        <div id="lang-breakdown"></div>
+        <div id="source-breakdown"></div>
+      </div>
       <div id="playlists-result" style="margin-top:16px;"></div>
     </section>
 
@@ -345,9 +381,37 @@
       pt: "Portuguese",
       en: "English",
       es: "Spanish",
+      fr: "French",
+      it: "Italian",
+      de: "German",
+      ja: "Japanese",
+      ko: "Korean",
+      ru: "Russian",
+      nl: "Dutch",
+      sv: "Swedish",
+      pl: "Polish",
+      tr: "Turkish",
+      ar: "Arabic",
+      hi: "Hindi",
+      zh: "Chinese",
       other: "Other languages",
       instrumental: "Instrumental",
       unclassified: "Unclassified (quarantine)"
+    };
+
+    const SOURCE_LABELS = {
+      cache: "Cache hit",
+      lyrics_nlp: "Lyrics + NLP",
+      "lyrics_nlp+isrc": "Lyrics + NLP + ISRC",
+      title_script: "Title script (non-Latin)",
+      title_diacritics: "Title diacritics",
+      "title+isrc": "Title + ISRC",
+      artist_consensus: "Artist consensus",
+      instrumental: "Instrumental",
+      no_lyrics: "Unclassified: no lyrics found",
+      too_short: "Unclassified: lyrics too short",
+      low_confidence: "Unclassified: ambiguous / low confidence",
+      provider_error: "Unclassified: transient API error (not cached)"
     };
 
     let isAuthenticated = false;
@@ -429,23 +493,25 @@
       document.getElementById("stats-grid").innerHTML = `
         <div class="stat-box"><span class="label">Liked fetched</span><span class="value">${s.total_fetched ?? 0}</span></div>
         <div class="stat-box"><span class="label">Unique tracks</span><span class="value">${s.unique_tracks ?? 0}</span></div>
-        <div class="stat-box"><span class="label">Duplicates skipped</span><span class="value">${s.duplicates_removed ?? 0}</span></div>
+        <div class="stat-box"><span class="label">Duplicates</span><span class="value">${s.duplicates_removed ?? 0}</span></div>
         <div class="stat-box"><span class="label">Processed</span><span class="value">${s.processed_tracks ?? 0}</span></div>
         <div class="stat-box"><span class="label">Cache hits</span><span class="value">${s.cache_hits ?? 0}</span></div>
+        <div class="stat-box"><span class="label">API errors</span><span class="value">${s.provider_errors ?? 0}</span></div>
       `;
 
-      const counts = s.counts_by_language || {};
-      const entries = Object.entries(counts);
-      const langEl = document.getElementById("lang-breakdown");
-      if (entries.length > 0) {
-        langEl.innerHTML =
-          `<div class="hint" style="margin-bottom:6px;">Language breakdown</div>` +
-          `<ul class="clean-list">` +
-          entries.map(([k, v]) => `<li>${escapeHtml(LANG_LABELS[k] || k)}: <strong>${v}</strong></li>`).join("") +
-          `</ul>`;
-      } else {
-        langEl.innerHTML = "";
-      }
+      const langEntries = Object.entries(s.counts_by_language || {}).sort((a, b) => b[1] - a[1]);
+      document.getElementById("lang-breakdown").innerHTML = langEntries.length
+        ? `<div class="hint" style="margin-bottom:6px;">Language breakdown</div><ul class="clean-list">` +
+          langEntries.map(([k, v]) => `<li>${escapeHtml(LANG_LABELS[k] || k)}: <strong>${v}</strong></li>`).join("") +
+          `</ul>`
+        : "";
+
+      const srcEntries = Object.entries(s.counts_by_source || {}).sort((a, b) => b[1] - a[1]);
+      document.getElementById("source-breakdown").innerHTML = srcEntries.length
+        ? `<div class="hint" style="margin-bottom:6px;">Classification sources</div><ul class="clean-list">` +
+          srcEntries.map(([k, v]) => `<li>${escapeHtml(SOURCE_LABELS[k] || k)}: <strong>${v}</strong></li>`).join("") +
+          `</ul>`
+        : "";
 
       const plEl = document.getElementById("playlists-result");
       if (s.playlists_updated && s.playlists_updated.length > 0) {
@@ -469,8 +535,12 @@
       clearNotice();
       setRunButtonsEnabled(false);
 
+      const minTracks = Math.max(1, Math.min(50, parseInt(document.getElementById("min-tracks").value || "3", 10)));
       const payload = {
         cleanup_mode: document.getElementById("cleanup-mode").value,
+        min_tracks_per_playlist: minTracks,
+        retry_unclassified: document.getElementById("retry-unclassified").checked,
+        enable_metadata_fallback: document.getElementById("metadata-fallback").checked,
         create_quarantine_playlist: document.getElementById("create-quarantine").checked,
         public_playlists: document.getElementById("public-playlists").checked,
         force_reclassify: document.getElementById("force-reclassify").checked,
@@ -523,7 +593,7 @@
       const hint = document.getElementById("mode-hint");
       hint.textContent = e.target.value === "hard_delete"
         ? "Removes all managed playlists with matching names from your library and creates fresh ones."
-        : "Preserves the playlist link, cover art, and followers while removing any stray duplicates.";
+        : "Preserves playlist links, cover art, and followers while removing stray duplicates.";
     });
 
     document.getElementById("btn-dry-run").addEventListener("click", () => startJob(true));
@@ -549,4 +619,4 @@
     checkAuthStatus();
   </script>
 </body>
-</html>3. Suíte de testes (tests/)
+</html>

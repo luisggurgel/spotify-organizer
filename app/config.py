@@ -18,18 +18,35 @@ class Settings(BaseSettings):
 
     database_path: str = "spotify_organizer.db"
 
-    language_confidence_threshold: float = 0.85
-    isrc_fallback_threshold: float = 0.70
-    min_lyrics_chars: int = 80
-    min_unique_words: int = 12
+    language_confidence_threshold: float = 0.70
+    language_confidence_margin: float = 0.20
+    isrc_fallback_threshold: float = 0.50
+    isrc_fallback_margin: float = 0.12
+    min_lyrics_chars: int = 45
+    min_unique_words: int = 7
 
-    lrclib_user_agent: str = "SpotifyOrganizer/1.0.0 (contact@example.com)"
-    lrclib_max_concurrency: int = 5
+    lrclib_user_agent: str = "SpotifyOrganizer/1.1.0 (contact@example.com)"
+    lrclib_max_concurrency: int = 3
+    lyrics_ovh_max_concurrency: int = 3
+    vagalume_api_key: str = ""
 
-    target_playlists: dict[str, str] = {
+    language_playlist_names: dict[str, str] = {
         "pt": "Songs - Portuguese",
         "en": "Songs - English",
         "es": "Songs - Spanish",
+        "fr": "Songs - French",
+        "it": "Songs - Italian",
+        "de": "Songs - German",
+        "ja": "Songs - Japanese",
+        "ko": "Songs - Korean",
+        "ru": "Songs - Russian",
+        "nl": "Songs - Dutch",
+        "sv": "Songs - Swedish",
+        "pl": "Songs - Polish",
+        "tr": "Songs - Turkish",
+        "ar": "Songs - Arabic",
+        "hi": "Songs - Hindi",
+        "zh": "Songs - Chinese",
     }
     quarantine_playlist_name: str = "Review - Unclassified Language"
 

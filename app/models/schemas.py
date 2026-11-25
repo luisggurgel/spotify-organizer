@@ -30,6 +30,9 @@ class OrganizeRequest(BaseModel):
     create_quarantine_playlist: bool = False
     dry_run: bool = False
     force_reclassify: bool = False
+    retry_unclassified: bool = True
+    enable_metadata_fallback: bool = True
+    min_tracks_per_playlist: int = Field(default=3, ge=1, le=50)
 
 
 class JobStats(BaseModel):
@@ -38,7 +41,9 @@ class JobStats(BaseModel):
     duplicates_removed: int = 0
     cache_hits: int = 0
     processed_tracks: int = 0
+    provider_errors: int = 0
     counts_by_language: dict[str, int] = Field(default_factory=dict)
+    counts_by_source: dict[str, int] = Field(default_factory=dict)
     playlists_deleted: int = 0
     playlists_updated: list[str] = Field(default_factory=list)
 

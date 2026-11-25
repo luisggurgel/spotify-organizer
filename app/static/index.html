@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spotify Language Organizer</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --surface: #1b1b1b;
+      --surface-alt: #242424;
+      --border: #303030;
+      --text: #f3f3f3;
+      --muted: #a7a7a7;
+      --accent: #1db954;
+      --accent-hover: #1ed760;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 20px 64px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+    }
+
+    .badge.ok {
+      border-color: rgba(29, 185, 84, 0.45);
+      color: var(--accent);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    label.block {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    select {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface-alt);
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+
+    .hint {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 0.92rem;
+      cursor: pointer;
+    }
+
+    .checkbox-row input {
+      margin-top: 4px;
+      accent-color: var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    button, a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0b0b0b;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface-alt);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #2f2f2f;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: var(--border);
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      color: var(--text);
+      border-color: #555;
+    }
+
+    .notice {
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .notice.show { display: block; }
+    .notice.error { background: rgba(226, 85, 85, 0.14); border: 1px solid rgba(226, 85, 85, 0.4); color: #f5a3a3; }
+    .notice.info { background: rgba(29, 185, 84, 0.12); border: 1px solid rgba(29, 185, 84, 0.35); color: #9be8b5; }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: var(--surface-alt);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.25s ease;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat-box {
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+
+    .stat-box .label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: block;
+    }
+
+    .stat-box .value {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    ul.clean-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    footer {
+      margin-top: 28px;
+      font-size: 0.84rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    footer a {
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Spotify Language Organizer</h1>
+        <p class="subtitle">Sort your liked songs by language using lyrics and NLP detection.</p>
+      </div>
+      <span id="auth-badge" class="badge">Checking connection...</span>
+    </header>
+
+    <div id="notice" class="notice"></div>
+
+    <section class="card">
+      <h2>1. Spotify Account</h2>
+      <p id="auth-description" class="hint" style="margin-top:0;">
+        Connect your account to allow reading your liked songs and updating your playlists.
+      </p>
+      <div class="actions" style="margin-top:12px;">
+        <a id="auth-btn" class="btn btn-primary" href="/auth/login">Connect with Spotify</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Run</h2>
+
+      <div class="field">
+        <label class="block" for="cleanup-mode">Existing playlist handling</label>
+        <select id="cleanup-mode">
+          <option value="replace_tracks">Replace tracks in place (recommended)</option>
+          <option value="hard_delete">Delete old playlists and recreate from scratch</option>
+        </select>
+        <div class="hint" id="mode-hint">
+          Preserves the playlist link, cover art, and followers while removing any stray duplicates.
+        </div>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="create-quarantine" />
+        <span>Create a review playlist for tracks with missing lyrics or uncertain language</span>
+      </label>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="public-playlists" />
+        <span>Make newly created playlists public</span>
+      </label>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="force-reclassify" />
+        <span>Ignore local cache and reclassify all tracks</span>
+      </label>
+
+      <div class="actions">
+        <button id="btn-dry-run" class="btn-secondary" disabled>Dry Run (Simulate)</button>
+        <button id="btn-run" class="btn-primary" disabled>Organize playlists</button>
+        <button id="btn-clear-cache" class="btn-ghost">Clear cache</button>
+      </div>
+    </section>
+
+    <section id="job-card" class="card" style="display:none;">
+      <h2 id="job-title">Progress</h2>
+      <div id="job-stage" class="hint" style="margin-top:0;">Waiting to start...</div>
+      <div class="progress-bar-wrap">
+        <div id="progress-fill" class="progress-bar-fill"></div>
+      </div>
+
+      <div id="stats-grid" class="stats-grid"></div>
+      <div id="lang-breakdown" style="margin-top:16px;"></div>
+      <div id="playlists-result" style="margin-top:16px;"></div>
+    </section>
+
+    <footer>
+      <span>OAuth tokens and language classifications are stored only in your local SQLite database.</span>
+      <a href="/docs" target="_blank" rel="noopener">API Documentation (/docs)</a>
+    </footer>
+  </div>
+
+  <script>
+    const STAGE_LABELS = {
+      queued: "Queued...",
+      ingesting: "Fetching liked songs and removing duplicates...",
+      classifying: "Looking up lyrics and detecting languages...",
+      cleaning: "Checking and cleaning up old playlists...",
+      populating: "Updating playlists on Spotify...",
+      completed: "Done.",
+      failed: "An error occurred during execution."
+    };
+
+    const LANG_LABELS = {
+      pt: "Portuguese",
+      en: "English",
+      es: "Spanish",
+      other: "Other languages",
+      instrumental: "Instrumental",
+      unclassified: "Unclassified (quarantine)"
+    };
+
+    let isAuthenticated = false;
+    let pollTimer = null;
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showNotice(text, type = "info") {
+      const el = document.getElementById("notice");
+      el.textContent = text;
+      el.className = `notice show ${type}`;
+    }
+
+    function clearNotice() {
+      document.getElementById("notice").className = "notice";
+    }
+
+    function setRunButtonsEnabled(enabled) {
+      document.getElementById("btn-dry-run").disabled = !enabled;
+      document.getElementById("btn-run").disabled = !enabled;
+    }
+
+    async function checkAuthStatus() {
+      const badge = document.getElementById("auth-badge");
+      const desc = document.getElementById("auth-description");
+      const btn = document.getElementById("auth-btn");
+
+      try {
+        const res = await fetch("/auth/status");
+        const data = await res.json();
+        isAuthenticated = Boolean(data.authenticated);
+
+        if (isAuthenticated) {
+          const name = data.display_name ? `Connected: ${data.display_name}` : "Connected";
+          badge.textContent = name;
+          badge.className = "badge ok";
+          desc.textContent = "Your account is connected. Access tokens refresh automatically when needed.";
+          btn.textContent = "Reconnect account";
+          btn.className = "btn btn-secondary";
+          setRunButtonsEnabled(true);
+        } else {
+          badge.textContent = "Not connected";
+          badge.className = "badge";
+          setRunButtonsEnabled(false);
+        }
+      } catch {
+        badge.textContent = "Status check failed";
+        setRunButtonsEnabled(false);
+      }
+    }
+
+    function renderJob(job) {
+      const card = document.getElementById("job-card");
+      card.style.display = "block";
+
+      const modeLabel = job.dry_run ? "Dry Run" : "Organization";
+      document.getElementById("job-title").textContent = `${modeLabel} — ${job.status}`;
+      document.getElementById("job-stage").textContent = STAGE_LABELS[job.status] || job.status;
+
+      const s = job.stats || {};
+      let pct = 5;
+      if (job.status === "classifying" && s.unique_tracks > 0) {
+        pct = Math.min(85, Math.round((s.processed_tracks / s.unique_tracks) * 80) + 5);
+      } else if (job.status === "cleaning") {
+        pct = 90;
+      } else if (job.status === "populating") {
+        pct = 95;
+      } else if (job.status === "completed") {
+        pct = 100;
+      }
+      document.getElementById("progress-fill").style.width = `${pct}%`;
+
+      document.getElementById("stats-grid").innerHTML = `
+        <div class="stat-box"><span class="label">Liked fetched</span><span class="value">${s.total_fetched ?? 0}</span></div>
+        <div class="stat-box"><span class="label">Unique tracks</span><span class="value">${s.unique_tracks ?? 0}</span></div>
+        <div class="stat-box"><span class="label">Duplicates skipped</span><span class="value">${s.duplicates_removed ?? 0}</span></div>
+        <div class="stat-box"><span class="label">Processed</span><span class="value">${s.processed_tracks ?? 0}</span></div>
+        <div class="stat-box"><span class="label">Cache hits</span><span class="value">${s.cache_hits ?? 0}</span></div>
+      `;
+
+      const counts = s.counts_by_language || {};
+      const entries = Object.entries(counts);
+      const langEl = document.getElementById("lang-breakdown");
+      if (entries.length > 0) {
+        langEl.innerHTML =
+          `<div class="hint" style="margin-bottom:6px;">Language breakdown</div>` +
+          `<ul class="clean-list">` +
+          entries.map(([k, v]) => `<li>${escapeHtml(LANG_LABELS[k] || k)}: <strong>${v}</strong></li>`).join("") +
+          `</ul>`;
+      } else {
+        langEl.innerHTML = "";
+      }
+
+      const plEl = document.getElementById("playlists-result");
+      if (s.playlists_updated && s.playlists_updated.length > 0) {
+        plEl.innerHTML =
+          `<div class="hint" style="margin-bottom:6px;">Updated playlists (removed: ${s.playlists_deleted ?? 0})</div>` +
+          `<ul class="clean-list">` +
+          s.playlists_updated.map((p) => `<li>${escapeHtml(p)}</li>`).join("") +
+          `</ul>`;
+      } else if (job.status === "completed" && job.dry_run) {
+        plEl.innerHTML = `<div class="hint">Simulation finished. No playlists were modified on Spotify.</div>`;
+      } else {
+        plEl.innerHTML = "";
+      }
+
+      if (job.status === "failed") {
+        showNotice(`Execution failed: ${job.error || "unknown error"}`, "error");
+      }
+    }
+
+    async function startJob(dryRun) {
+      clearNotice();
+      setRunButtonsEnabled(false);
+
+      const payload = {
+        cleanup_mode: document.getElementById("cleanup-mode").value,
+        create_quarantine_playlist: document.getElementById("create-quarantine").checked,
+        public_playlists: document.getElementById("public-playlists").checked,
+        force_reclassify: document.getElementById("force-reclassify").checked,
+        dry_run: dryRun
+      };
+
+      try {
+        const res = await fetch("/organize/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showNotice(data.detail || "Could not start the job.", "error");
+          setRunButtonsEnabled(isAuthenticated);
+          return;
+        }
+
+        renderJob(data);
+        pollJob(data.job_id);
+      } catch {
+        showNotice("Failed to communicate with the local server.", "error");
+        setRunButtonsEnabled(isAuthenticated);
+      }
+    }
+
+    function pollJob(jobId) {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`/organize/jobs/${encodeURIComponent(jobId)}`);
+          if (!res.ok) return;
+          const job = await res.json();
+          renderJob(job);
+
+          if (job.status === "completed" || job.status === "failed") {
+            clearInterval(pollTimer);
+            pollTimer = null;
+            setRunButtonsEnabled(isAuthenticated);
+          }
+        } catch {
+          // retry on next tick
+        }
+      }, 1500);
+    }
+
+    document.getElementById("cleanup-mode").addEventListener("change", (e) => {
+      const hint = document.getElementById("mode-hint");
+      hint.textContent = e.target.value === "hard_delete"
+        ? "Removes all managed playlists with matching names from your library and creates fresh ones."
+        : "Preserves the playlist link, cover art, and followers while removing any stray duplicates.";
+    });
+
+    document.getElementById("btn-dry-run").addEventListener("click", () => startJob(true));
+    document.getElementById("btn-run").addEventListener("click", () => startJob(false));
+
+    document.getElementById("btn-clear-cache").addEventListener("click", async () => {
+      clearNotice();
+      try {
+        const res = await fetch("/cache", { method: "DELETE" });
+        const data = await res.json();
+        showNotice(`Cache cleared (${data.removed_entries} entries removed).`, "info");
+      } catch {
+        showNotice("Failed to clear cache.", "error");
+      }
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("auth") === "success") {
+      showNotice("Spotify account connected successfully.", "info");
+      window.history.replaceState({}, "", "/");
+    }
+
+    checkAuthStatus();
+  </script>
+</body>
+</html>3. Suíte de testes (tests/)

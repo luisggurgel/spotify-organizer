@@ -1,0 +1,9 @@
+[project]
+name = "spotify-organizer"
+version = "1.0.0"
+description = "Organize liked Spotify tracks into language-based playlists using lyrics, NLP, and ISRC cross-validation."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

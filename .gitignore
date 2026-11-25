@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets & local database
+.env
+*.db
+*.db-wal
+*.db-shm
+
+# IDEs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
